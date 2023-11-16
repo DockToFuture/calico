@@ -35,7 +35,6 @@ import (
 	"github.com/projectcalico/calico/libcalico-go/lib/backend/k8s/resources"
 	"github.com/projectcalico/calico/libcalico-go/lib/backend/model"
 	cerrors "github.com/projectcalico/calico/libcalico-go/lib/errors"
-	"github.com/projectcalico/calico/libcalico-go/lib/net"
 	"github.com/projectcalico/calico/libcalico-go/lib/winutils"
 
 	v1 "k8s.io/api/core/v1"
@@ -766,22 +765,17 @@ func getTunIp(n *v1.Node) (*model.KVPair, error) {
 		return nil, nil
 	}
 
-	ip, _, err := net.ParseCIDR(n.Spec.PodCIDR)
-	if err != nil {
-		log.Warnf("Invalid podCIDR for HostConfig: %s, %s", n.Name, n.Spec.PodCIDR)
-		return nil, err
-	}
 	// We need to get the IP for the podCIDR and increment it to the
 	// first IP in the CIDR.
-	tunIp := ip.To4()
-	tunIp[3]++
+	//tunIp := ip.To4()
+	//tunIp[3]++
 
 	kvp := &model.KVPair{
 		Key: model.HostConfigKey{
 			Hostname: n.Name,
 			Name:     "IpInIpTunnelAddr",
 		},
-		Value: tunIp.String(),
+		Value: "",
 	}
 
 	return kvp, nil

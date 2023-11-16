@@ -87,20 +87,21 @@ func Migrate(ctxt context.Context, c client.Interface, nodename string) error {
 		}
 
 		// Parse PodCIDR.
-		ip, cidr, err := net.ParseCIDR(k8sNode.Spec.PodCIDR)
+		_, cidr, err := net.ParseCIDR(k8sNode.Spec.PodCIDR)
 		if err != nil {
 			return fmt.Errorf("PodCIDR %s did not parse successfully: %s", k8sNode.Spec.PodCIDR, err)
 		} else if cidr.Version() == 4 {
 			// We need to get the IP for the podCIDR and increment it to the
 			// first IP in the CIDR to match the behavior used by Calico when using host-local IPAM.
-			tunIp := ip.To4()
-			if tunIp == nil {
-				return fmt.Errorf("Cannot pick an IPv4 tunnel address from the given CIDR: %s", k8sNode.Spec.PodCIDR)
-			}
-			tunIp[3]++
+			//tunIp := ip.To4()
+			//if tunIp == nil {
+			//	return fmt.Errorf("Cannot pick an IPv4 tunnel address from the given CIDR: %s", k8sNode.Spec.PodCIDR)
+			//}
+			//tunIp[3]++
 
 			// Assign the address via Calico IPAM.
-			ipipTunnelAddr := cnet.ParseIP(tunIp.String())
+			//ipipTunnelAddr := cnet.ParseIP(tunIp.String())
+			ipipTunnelAddr := cnet.ParseIP("")
 			handle := fmt.Sprintf("ipip-tunnel-addr-%s", nodename)
 			if err = c.IPAM().AssignIP(ctxt, ipam.AssignIPArgs{
 				IP:       *ipipTunnelAddr,
@@ -112,7 +113,7 @@ func Migrate(ctxt context.Context, c client.Interface, nodename string) error {
 				},
 			}); err != nil {
 				if _, ok := err.(errors.ErrorResourceAlreadyExists); !ok {
-					return fmt.Errorf("failed to get add IPIP tunnel addr %s: %s", tunIp.String(), err)
+					return fmt.Errorf("failed to get add IPIP tunnel addr %s: %s", "", err)
 				}
 				log.Info("IPIP tunnel address already assigned in IPAM, continuing...")
 			}
@@ -127,7 +128,7 @@ func Migrate(ctxt context.Context, c client.Interface, nodename string) error {
 				if node.Spec.BGP == nil {
 					node.Spec.BGP = &libapiv3.NodeBGPSpec{}
 				}
-				node.Spec.BGP.IPv4IPIPTunnelAddr = tunIp.String()
+				node.Spec.BGP.IPv4IPIPTunnelAddr = ""
 				if _, err = c.Nodes().Update(ctxt, node, options.SetOptions{}); err != nil {
 					if _, ok := err.(errors.ErrorResourceUpdateConflict); ok {
 						log.Info("Encountered update conflict, retrying...")
